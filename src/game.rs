@@ -21,6 +21,7 @@ pub struct Game {
 }
 
 impl Game {
+    /// Sets up game board in starting positions
     pub fn new() -> Self {
         Game {
             goats: BitBoard::new().set((1, 1)).set((1, 8)),
@@ -35,10 +36,13 @@ impl Game {
             orange: BitBoard::new().fill_range(56..64),
         }
     }
+
+    /// returns bitboard of combined side state (white | orange)
     pub fn board_state(self) -> BitArray<u64, Msb0> {
         (self.white.num.data | self.orange.num.data).into_bitarray()
     }
 
+    /// given normalized position finds the piece in given position
     pub fn piece_from_norm(self, i: u64) -> Piece {
         let mut temp_bitboard = BitBoard::new();
         temp_bitboard.num.set(i as usize, true);
@@ -75,12 +79,14 @@ impl Game {
         return Piece::None;
     }
 
+    /// gets corresponding bitboard for side
     fn side_bitboard(self, s: Side) -> BitBoard {
         match s {
             Side::Orange => self.orange,
             Side::White => self.white,
         }
     }
+    /// gets corresponding bitboard for piece type
     fn piece_bitboard(self, s: Piece) -> BitBoard {
         match s {
             Piece::None => todo!(),
@@ -95,6 +101,7 @@ impl Game {
         }
     }
 
+    /// Finds piece non-normalized position on board
     pub fn pos_from_piece(self, p: Piece) -> Position {
         let bits = self.piece_bitboard(p).num.data
             & self.side_bitboard(Piece::decode(p.encode()).1).num.data;
@@ -106,6 +113,7 @@ impl Game {
         return Game::normal_to_pos(i as u64);
     }
 
+    /// Converts normalized position to position
     pub fn normal_to_pos(i: u64) -> Position {
         let x = i % 8;
         let y = i / 8;
@@ -113,6 +121,7 @@ impl Game {
         (x + 1, y + 1)
     }
 
+    /// Encodes piece to tile notation
     pub fn encode(self) -> String {
         let mut none_count = 0;
         let mut fen: Vec<String> = vec![];
@@ -139,12 +148,82 @@ impl Game {
         fen.join("")
     }
 
+    /// prints ascii representation of board to stdout
     pub fn print_board(self) {
         for i in 0..64 {
             if i % 8 == 0 {
                 println!();
             }
             print!(" {} ", self.piece_from_norm(i).encode());
+        }
+    }
+
+    /// Generates bitboard of possible moves from given position
+    pub fn move_mask_raw(self, p: Piece) -> BitBoard {
+        let mut bitb = BitBoard::new();
+        let pos = self.pos_from_piece(p);
+
+        match p {
+            Piece::None => bitb,
+            Piece::Goat(_) | Piece::Horse(_) | Piece::Bird(_) => BitBoard::from_bitarray(
+                (!self.board_state().data
+                    & bitb
+                        .set((pos.0 + 1, pos.1))
+                        .set((pos.0 - 1, pos.1))
+                        .set((pos.0, pos.1 + 1))
+                        .set((pos.0, pos.1 - 1))
+                        .set((pos.0 + 1, pos.1 + 1))
+                        .set((pos.0 - 1, pos.1 + 1))
+                        .set((pos.0 - 1, pos.1 - 1))
+                        .set((pos.0 + 1, pos.1 - 1))
+                        .num
+                        .data)
+                    .into_bitarray(),
+            ),
+            Piece::Sloth(_) => BitBoard::from_bitarray(
+                (!self.board_state().data
+                    & bitb
+                        .set((pos.0 + 1, pos.1))
+                        .set((pos.0 - 1, pos.1))
+                        .set((pos.0, pos.1 + 1))
+                        .set((pos.0, pos.1 - 1))
+                        .num
+                        .data)
+                    .into_bitarray(),
+            ),
+            // TODO: Add consumption moves and account for forward direction depennding on side
+            // (white forward = y+1 and orange forward = y-1)
+            Piece::Tiger(s) | Piece::Bear(s) | Piece::MantisShrimp(s) | Piece::Snake(s) => {
+                let mut consume_mask: BitBoard = BitBoard::new();
+                match s {
+                    Side::Orange => {
+                        let mask = bitb.set((pos.0, pos.1 - 1)).set((pos.0 - 1, pos.1 - 1));
+                        if self.white.num.data & mask.num.data != 0 {
+                            consume_mask = BitBoard::from_bitarray(
+                                (self.board_state().data & mask.num.data).into_bitarray::<Msb0>(),
+                            );
+                        }
+                    }
+                    Side::White => {
+                        let mask = bitb.set((pos.0, pos.1 + 1)).set((pos.0 + 1, pos.1 + 1));
+                        if self.orange.num.data & mask.num.data != 0 {
+                            consume_mask = BitBoard::from_bitarray(
+                                (self.board_state().data & mask.num.data).into_bitarray::<Msb0>(),
+                            );
+                        }
+                    }
+                };
+                let base_mask = BitBoard::new()
+                    .set((pos.0 - 1, pos.1 + 1))
+                    .set((pos.0 + 1, pos.1 + 1))
+                    .set((pos.0 + 1, pos.1 - 1))
+                    .set((pos.0 - 1, pos.1 - 1));
+
+                BitBoard::from_bitarray(
+                    ((!self.board_state().data & base_mask.num.data) | consume_mask.num.data)
+                        .into_bitarray(),
+                )
+            }
         }
     }
 }

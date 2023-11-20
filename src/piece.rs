@@ -20,12 +20,14 @@ pub enum Piece {
 }
 
 impl Piece {
+    /// Capitalizes encoded piece depending on side
     pub fn side_encode(self, p: char, s: Side) -> String {
         match s {
             Side::Orange => p.to_uppercase().to_string(),
             Side::White => p.to_string(),
         }
     }
+    /// Converts piece to tile notation
     pub fn encode(self) -> String {
         match self.clone() {
             Piece::None => '#'.to_string(),
@@ -39,6 +41,7 @@ impl Piece {
             Piece::MantisShrimp(side) => self.side_encode('m', side),
         }
     }
+    /// Converts Tile Notation to piece
     pub fn decode(code: String) -> (Piece, Side) {
         let mut side: Side = Side::White;
         if code.chars().next().unwrap().is_uppercase() {
@@ -66,34 +69,5 @@ impl Piece {
         };
 
         (p, side)
-    }
-
-    pub fn move_mask_raw(self, pos: Position, is_take: bool) -> BitBoard {
-        let mut bitb = BitBoard::new();
-
-        match self {
-            Piece::None => bitb,
-            Piece::Goat(_) | Piece::Horse(_) | Piece::Bird(_) => bitb
-                .set((pos.0 + 1, pos.1))
-                .set((pos.0 - 1, pos.1))
-                .set((pos.0, pos.1 + 1))
-                .set((pos.0, pos.1 - 1))
-                .set((pos.0 + 1, pos.1 + 1))
-                .set((pos.0 - 1, pos.1 + 1))
-                .set((pos.0 - 1, pos.1 - 1))
-                .set((pos.0 + 1, pos.1 - 1)),
-            Piece::Sloth(_) => bitb
-                .set((pos.0 + 1, pos.1))
-                .set((pos.0 - 1, pos.1))
-                .set((pos.0, pos.1 + 1))
-                .set((pos.0, pos.1 - 1)),
-            // TODO: Add consumption moves and account for forward direction depennding on side
-            // (white forward = y+1 and orange forward = y-1)
-            _ => bitb
-                .set((pos.0 + 1, pos.1 + 1))
-                .set((pos.0 - 1, pos.1 + 1))
-                .set((pos.0 - 1, pos.1 - 1))
-                .set((pos.0 + 1, pos.1 - 1)),
-        }
     }
 }
