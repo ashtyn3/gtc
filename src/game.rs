@@ -39,6 +39,39 @@ impl Game {
         g
     }
 
+    pub fn decode(code: String) -> Self {
+        let rows = code.split("/");
+        let mut g = Game {
+            goats: BitBoard::new(),
+            horses: BitBoard::new(),
+            tigers: BitBoard::new(),
+            bears: BitBoard::new(),
+            snakes: BitBoard::new(),
+            mantis_shrimps: BitBoard::new(),
+            sloths: BitBoard::new(),
+            birds: BitBoard::new(),
+            white: BitBoard::new(),
+            orange: BitBoard::new(),
+        };
+
+        for (ri, row) in rows.enumerate() {
+            let mut norm = ri * 8;
+            for (i, c) in row.chars().enumerate() {
+                if c.is_ascii_digit() {
+                    let modif = c.to_digit(10);
+                    norm += modif.unwrap() as usize;
+                } else {
+                    let (p, side) = Piece::decode(c.to_string());
+
+                    g.side_bitboard(side).num.set(norm, true);
+                    g.piece_bitboard(p).num.set(norm, true);
+                    norm += 1;
+                }
+            }
+        }
+        g
+    }
+
     /// returns bitboard of combined side state (white | orange)
     pub fn board_state(self) -> BitArray<u64, Msb0> {
         (self.white.num.data | self.orange.num.data).into_bitarray()
@@ -148,6 +181,9 @@ impl Game {
             }
             let pos = Game::normal_to_pos(i);
             if pos.0 == 8 && pos.1 != 8 {
+                if none_count != 0 {
+                    fen.push(none_count.to_string());
+                }
                 fen.push("/".to_string());
                 none_count = 0;
             }

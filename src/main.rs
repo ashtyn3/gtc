@@ -24,11 +24,11 @@ fn main() {
     g.make_move(Piece::Snake(Side::Orange), (1, 2));
     g.make_move(Piece::Snake(Side::Orange), (1, 1));
     g.make_move(Piece::Snake(Side::Orange), (2, 2));
-    println!("{}", g.encode());
-    // g.make_move(Piece::Snake(Side::Orange), (3, 3));
-    // g.make_move(Piece::Snake(Side::Orange), (4, 2));
     g.make_move(Piece::Tiger(Side::White), (2, 2));
     println!("{}", g.encode());
+
+    Game::decode(g.encode()).print_board();
+
     // println!(
     //     "{:?}",
     //     (g.move_mask_raw(Piece::Snake(Side::Orange)).num.data
