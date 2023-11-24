@@ -56,3 +56,23 @@ impl Normalizable for Position {
         coords.join("").to_string()
     }
 }
+pub fn decode_position(p: String) -> Position {
+    let parts = p.chars().collect::<Vec<char>>();
+    let row = parts[0];
+    let column = parts[1];
+    let mut pos = (column.to_digit(10).unwrap() as u64, 0);
+
+    pos.1 = match row.to_string().as_str() {
+        "a" => 1,
+        "b" => 2,
+        "c" => 3,
+        "d" => 4,
+        "e" => 5,
+        "f" => 6,
+        "g" => 7,
+        "h" => 8,
+        _ => 0,
+    };
+
+    pos
+}

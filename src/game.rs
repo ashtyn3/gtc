@@ -39,6 +39,23 @@ impl Game {
         g
     }
 
+    /// Returns blank board
+    pub fn blank() -> Self {
+        Game {
+            goats: BitBoard::new(),
+            horses: BitBoard::new(),
+            tigers: BitBoard::new(),
+            bears: BitBoard::new(),
+            snakes: BitBoard::new(),
+            mantis_shrimps: BitBoard::new(),
+            sloths: BitBoard::new(),
+            birds: BitBoard::new(),
+            white: BitBoard::new(),
+            orange: BitBoard::new(),
+        }
+    }
+
+    /// Decodes board string into a Game instance
     pub fn decode(code: String) -> Self {
         let rows = code.split("/");
         let mut g = Game {
@@ -193,12 +210,36 @@ impl Game {
 
     /// prints ascii representation of board to stdout
     pub fn print_board(self) {
+        print!("  ");
+        for i in 0..8 {
+            print!("  {} ", i + 1)
+        }
+        println!();
+        print!("  +");
+        for i in 0..8 {
+            print!("---+")
+        }
+        println!();
         for i in 0..64 {
-            if i % 8 == 0 {
+            if i % 8 == 0 && i != 0 {
+                println!();
+                print!("  +");
+                for i in 0..8 {
+                    print!("---+")
+                }
                 println!();
             }
-            print!(" {} ", self.piece_from_norm(i).encode());
+            if i % 8 == 0 {
+                print!("{} |", char::from_u32(65 + (i / 8)).unwrap())
+            }
+            print!(" {} |", self.piece_from_norm(i.into()).encode());
         }
+        println!();
+        print!("  +");
+        for i in 0..8 {
+            print!("---+")
+        }
+        println!();
     }
 
     /// Generates bitboard of possible moves from given position
@@ -298,6 +339,7 @@ impl Game {
         self.piece_bitboard(p).set(to);
     }
 
+    /// Checks if move is valid and executes if valid. Errors out if not valid.
     pub fn make_move(&mut self, p: Piece, to: Position) {
         let mut target_bitb = BitBoard::new();
         target_bitb.set(to);

@@ -2,6 +2,7 @@ pub mod bitboard;
 pub mod game;
 pub mod piece;
 pub mod position;
+mod repl;
 
 use bitvec::prelude::Msb0;
 use bitvec::view::BitViewSized;
@@ -9,25 +10,27 @@ use bitvec::view::BitViewSized;
 use crate::game::*;
 use crate::piece::*;
 use crate::position::*;
+use crate::repl::run;
 
 fn main() {
-    let mut g = Game::new();
+    // let mut g = Game::new();
 
     // let p = g.pos_from_piece(Piece::Goat(Side::White));
     // println!("{:?}: {:?}", p, g.piece_from_norm(p.normal() as u64));
 
-    g.make_move(Piece::Snake(Side::Orange), (6, 7));
-    g.make_move(Piece::Snake(Side::Orange), (5, 6));
-    g.make_move(Piece::Snake(Side::Orange), (4, 5));
-    g.make_move(Piece::Snake(Side::Orange), (3, 4));
-    g.make_move(Piece::Snake(Side::Orange), (2, 3));
-    g.make_move(Piece::Snake(Side::Orange), (1, 2));
-    g.make_move(Piece::Snake(Side::Orange), (1, 1));
-    g.make_move(Piece::Snake(Side::Orange), (2, 2));
-    g.make_move(Piece::Tiger(Side::White), (2, 2));
-    println!("{}", g.encode());
-
-    Game::decode(g.encode()).print_board();
+    // g.make_move(Piece::Snake(Side::Orange), (6, 7));
+    // g.make_move(Piece::Snake(Side::Orange), (5, 6));
+    // g.make_move(Piece::Snake(Side::Orange), (4, 5));
+    // g.make_move(Piece::Snake(Side::Orange), (3, 4));
+    // g.make_move(Piece::Snake(Side::Orange), (2, 3));
+    // g.make_move(Piece::Snake(Side::Orange), (1, 2));
+    // g.make_move(Piece::Snake(Side::Orange), (1, 1));
+    // g.make_move(Piece::Snake(Side::Orange), (2, 2));
+    // g.make_move(Piece::Tiger(Side::White), (2, 2));
+    // println!("{}", g.encode());
+    //
+    // Game::decode(g.encode()).print_board();
+    run();
 
     // println!(
     //     "{:?}",
