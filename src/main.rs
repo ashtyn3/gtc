@@ -12,21 +12,30 @@ use crate::position::*;
 
 fn main() {
     let mut g = Game::new();
-    g.orange = g.orange.set((2, 2)).set((5, 8));
-    g.snakes = g.snakes.set((2, 2)).set((5, 8));
 
-    let p = g.pos_from_piece(Piece::Goat(Side::White));
-    println!("{:?}: {:?}", p, g.piece_from_norm(p.normal() as u64));
-    g.print_board();
+    // let p = g.pos_from_piece(Piece::Goat(Side::White));
+    // println!("{:?}: {:?}", p, g.piece_from_norm(p.normal() as u64));
 
-    println!();
-    println!(
-        "{:?}",
-        (g.move_mask_raw(Piece::Snake(Side::Orange)).num.data
-            & bitboard::BitBoard::new()
-                .set(g.pos_from_piece(Piece::Tiger(Side::White)))
-                .num
-                .data)
-            .into_bitarray::<Msb0>()
-    );
+    g.make_move(Piece::Snake(Side::Orange), (6, 7));
+    g.make_move(Piece::Snake(Side::Orange), (5, 6));
+    g.make_move(Piece::Snake(Side::Orange), (4, 5));
+    g.make_move(Piece::Snake(Side::Orange), (3, 4));
+    g.make_move(Piece::Snake(Side::Orange), (2, 3));
+    g.make_move(Piece::Snake(Side::Orange), (1, 2));
+    g.make_move(Piece::Snake(Side::Orange), (1, 1));
+    g.make_move(Piece::Snake(Side::Orange), (2, 2));
+    println!("{}", g.encode());
+    // g.make_move(Piece::Snake(Side::Orange), (3, 3));
+    // g.make_move(Piece::Snake(Side::Orange), (4, 2));
+    g.make_move(Piece::Tiger(Side::White), (2, 2));
+    println!("{}", g.encode());
+    // println!(
+    //     "{:?}",
+    //     (g.move_mask_raw(Piece::Snake(Side::Orange)).num.data
+    //         & bitboard::BitBoard::new()
+    //             .set(g.pos_from_piece(Piece::Tiger(Side::White)))
+    //             .num
+    //             .data)
+    //         .into_bitarray::<Msb0>()
+    // );
 }

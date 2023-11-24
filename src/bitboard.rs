@@ -27,10 +27,16 @@ impl BitBoard {
 
     /// set position
     pub fn set(&mut self, pos: Position) -> BitBoard {
+        if pos.0 < 1 || pos.1 < 1 {
+            return self.clone();
+        }
         let actual_pos = pos.normal();
         let binding = self.clone();
-        let curr = binding.num.get(actual_pos).unwrap();
-        self.num.set(actual_pos, !*curr);
+        let curr = binding.num.get(actual_pos);
+        if curr.is_none() {
+            return self.clone();
+        }
+        self.num.set(actual_pos, !*curr.unwrap());
 
         self.clone()
     }
