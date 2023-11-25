@@ -12,4 +12,5 @@ random_word = { version = "0.4.1", features = ["en"] }
 chrono = "0.4.31"
 strum = { version = "0.25", features = ["derive"] }
 rayon = "1.8.0"
+clap = { version = "4.4.8", features = ["derive"] }
 

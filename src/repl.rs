@@ -34,7 +34,7 @@ pub fn read_state_file(ctx: &mut Instance, name: String) {
 
     println!("From: {}", ctx.board.encode());
 }
-pub fn cmd(ctx: &mut Instance, s: &str) {
+pub fn cmd(ctx: &mut Instance, s: &str, prot: bool) {
     let s = s.trim().split_whitespace().collect::<Vec<&str>>();
     match s[0] {
         "l" | "load" => {
@@ -52,19 +52,25 @@ pub fn cmd(ctx: &mut Instance, s: &str) {
             if s.len() > 1 {
                 read_state_file(ctx, s[1].to_string());
             } else {
-                println!("load-file <filename>")
+                if !prot {
+                    println!("load-file <filename>")
+                }
             }
         }
         "b" | "board" => ctx.board.print_board(),
         "fen" => println!("fen: {}", ctx.board.encode()),
         "g" | "generate" => {
             if s.len() < 2 {
-                println!("generate <piece id>");
+                if !prot {
+                    println!("generate <piece id>");
+                }
                 return;
             }
             let (p, _) = Piece::decode(s[1].to_string());
             let start_pos = ctx.board.pos_from_piece(p);
-            println!("moves:");
+            if !prot {
+                println!("moves:");
+            }
             for one in ctx.board.move_mask_raw(p).num.iter_ones() {
                 let pos = Board::normal_to_pos(one as u64).encode();
                 println!("{}{}-{}{}", s[1], start_pos.encode(), s[1], pos);
@@ -72,7 +78,9 @@ pub fn cmd(ctx: &mut Instance, s: &str) {
         }
         "m" | "move" => {
             if s.len() < 3 {
-                println!("move <piece id> <position id>");
+                if !prot {
+                    println!("move <piece id> <position id>");
+                }
                 return;
             }
             let (p, _) = Piece::decode(s[1].to_string());
@@ -83,7 +91,11 @@ pub fn cmd(ctx: &mut Instance, s: &str) {
                 .push_str(format!("{} {},", s[1], s[2]).as_str());
         }
         "w" | "who" => {
-            println!("Has move: {}", ctx.side)
+            if !prot {
+                println!("Has move: {}", ctx.side)
+            } else {
+                println!("{}", ctx.side)
+            }
         }
         "s" | "save" => {
             let time = Local::now().timestamp().to_string();
@@ -96,38 +108,61 @@ pub fn cmd(ctx: &mut Instance, s: &str) {
             let mut f = File::create(name.join("_")).expect("can't write file");
             f.write_all(ctx.states.as_bytes())
                 .expect("Failed to write state.");
-            println!("saved: {}", name.join("_"));
+            if !prot {
+                println!("saved: {}", name.join("_"));
+            } else {
+                println!("{}", name.join("_"));
+            }
         }
         "st" | "state" => {
-            println!("Passive defeat:\n{:?}", ctx.has_passiveless());
-            println!();
-            println!(
-                "Edge alignment ({}):\ngoat side: {:?}\nsloth side: {:?}",
-                ctx.side,
-                ctx.has_alignment().0,
-                ctx.has_alignment().1
-            );
-            println!();
-            println!("win ({}): {}", ctx.side, ctx.has_win())
+            if !prot {
+                println!("Passive defeat:\n{:?}", ctx.has_passiveless());
+                println!();
+                println!(
+                    "Edge alignment ({}):\ngoat side: {:?}\nsloth side: {:?}",
+                    ctx.side,
+                    ctx.has_alignment().0,
+                    ctx.has_alignment().1
+                );
+                println!();
+                println!("win ({}): {}", ctx.side, ctx.has_win())
+            } else {
+                println!(
+                    "Passive_defeat:\n  white: {:?}\n  orange: {:?}",
+                    ctx.has_passiveless()[&Side::White],
+                    ctx.has_passiveless()[&Side::Orange]
+                );
+                println!();
+                println!(
+                    "edge_alignment:\n  goat_side: {:?}\n  sloth_side: {:?}",
+                    ctx.has_alignment().0,
+                    ctx.has_alignment().1
+                );
+                println!();
+                println!("win: {}", ctx.has_win())
+            }
         }
+        "ping" => println!("ok"),
 
         _ => return,
     }
 }
-pub fn run() {
-    let conf: &mut Instance = &mut Instance {
+pub fn blank_instance() -> Instance {
+    Instance {
         board: Board::blank(),
-        states: Arc::new(String::from("")),
         side: Side::White,
-    };
-
+        states: Arc::new(String::from("")),
+    }
+}
+pub fn run() {
+    let conf: &mut Instance = &mut blank_instance();
     let mut e = DefaultEditor::new().expect("Could not open repl.");
     e.load_history("history.txt").err();
     loop {
         let res = e.readline("(gtc)");
         match res.as_ref().unwrap().trim() {
             "quit" => break,
-            _ => cmd(conf, &res.as_ref().unwrap()),
+            _ => cmd(conf, &res.as_ref().unwrap(), false),
         }
         e.add_history_entry(res.unwrap().as_str())
             .expect("Bad history");
