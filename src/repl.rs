@@ -1,18 +1,16 @@
 use std::fs::{self, File};
 use std::io::Write;
-use std::rc::Rc;
+use std::str::FromStr;
+use std::sync::Arc;
 
-use chrono::{Local, Utc};
+use chrono::Local;
 use random_word::Lang;
 use rustyline::DefaultEditor;
 
+use crate::game::Instance;
+use crate::piece::Side;
 use crate::position::{decode_position, Normalizable};
-use crate::{game::Game, piece::Piece};
-
-struct Instance {
-    game: Game,
-    states: Rc<String>,
-}
+use crate::{board::Board, piece::Piece};
 
 pub fn read_state_file(ctx: &mut Instance, name: String) {
     let raw = fs::read_to_string(name).expect("Couldn't read state file.");
@@ -20,7 +18,9 @@ pub fn read_state_file(ctx: &mut Instance, name: String) {
     let parts: Vec<&str> = binding.split("\n").collect();
     ctx.states = raw.into();
 
-    ctx.game = Game::decode(parts[0].to_string());
+    let head_parts = parts[0].split_whitespace().collect::<Vec<&str>>();
+    ctx.board = Board::decode(head_parts[0].to_string());
+    ctx.side = Side::from_str(head_parts[1]).unwrap();
 
     for m in parts[1].split(",") {
         if m.trim().len() == 0 {
@@ -29,24 +29,24 @@ pub fn read_state_file(ctx: &mut Instance, name: String) {
         let move_parts: Vec<&str> = m.split(" ").collect();
         let (p, _) = Piece::decode(move_parts[0].to_string());
         let pos = decode_position(move_parts[1].to_string());
-        ctx.game.make_move(p, pos)
+        ctx.board.make_move(p, pos)
     }
 
-    println!("From: {}", ctx.game.encode());
+    println!("From: {}", ctx.board.encode());
 }
 pub fn cmd(ctx: &mut Instance, s: &str) {
     let s = s.trim().split_whitespace().collect::<Vec<&str>>();
     match s[0] {
         "l" | "load" => {
             if s.len() > 1 {
-                ctx.game = Game::decode(s[1].to_string());
-                println!("loaded: {}", ctx.game.encode());
+                ctx.board = Board::decode(s[1].to_string());
+                println!("loaded: {}", ctx.board.encode());
             } else {
-                ctx.game = Game::new()
+                ctx.board = Board::new()
             }
-            Rc::get_mut(&mut ctx.states)
+            Arc::get_mut(&mut ctx.states)
                 .unwrap()
-                .push_str(format!("{}\n", ctx.game.encode()).as_str());
+                .push_str(format!("{} {}\n", ctx.board.encode(), ctx.side).as_str());
         }
         "lf" | "load-file" => {
             if s.len() > 1 {
@@ -55,18 +55,18 @@ pub fn cmd(ctx: &mut Instance, s: &str) {
                 println!("load-file <filename>")
             }
         }
-        "b" | "board" => ctx.game.print_board(),
-        "fen" => println!("fen: {}", ctx.game.encode()),
+        "b" | "board" => ctx.board.print_board(),
+        "fen" => println!("fen: {}", ctx.board.encode()),
         "g" | "generate" => {
             if s.len() < 2 {
                 println!("generate <piece id>");
                 return;
             }
             let (p, _) = Piece::decode(s[1].to_string());
-            let start_pos = ctx.game.pos_from_piece(p);
+            let start_pos = ctx.board.pos_from_piece(p);
             println!("moves:");
-            for one in ctx.game.move_mask_raw(p).num.iter_ones() {
-                let pos = Game::normal_to_pos(one as u64).encode();
+            for one in ctx.board.move_mask_raw(p).num.iter_ones() {
+                let pos = Board::normal_to_pos(one as u64).encode();
                 println!("{}{}-{}{}", s[1], start_pos.encode(), s[1], pos);
             }
         }
@@ -77,10 +77,13 @@ pub fn cmd(ctx: &mut Instance, s: &str) {
             }
             let (p, _) = Piece::decode(s[1].to_string());
             let pos = decode_position(s[2].to_string());
-            ctx.game.make_move(p, pos);
-            Rc::get_mut(&mut ctx.states)
+            ctx.board.make_move(p, pos);
+            Arc::get_mut(&mut ctx.states)
                 .unwrap()
                 .push_str(format!("{} {},", s[1], s[2]).as_str());
+        }
+        "w" | "who" => {
+            println!("Has move: {}", ctx.side)
         }
         "s" | "save" => {
             let time = Local::now().timestamp().to_string();
@@ -95,14 +98,27 @@ pub fn cmd(ctx: &mut Instance, s: &str) {
                 .expect("Failed to write state.");
             println!("saved: {}", name.join("_"));
         }
+        "st" | "state" => {
+            println!("Passive defeat:\n{:?}", ctx.has_passiveless());
+            println!();
+            println!(
+                "Edge alignment ({}):\ngoat side: {:?}\nsloth side: {:?}",
+                ctx.side,
+                ctx.has_alignment().0,
+                ctx.has_alignment().1
+            );
+            println!();
+            println!("win ({}): {}", ctx.side, ctx.has_win())
+        }
 
         _ => return,
     }
 }
 pub fn run() {
     let conf: &mut Instance = &mut Instance {
-        game: Game::blank(),
-        states: Rc::new(String::from("")),
+        board: Board::blank(),
+        states: Arc::new(String::from("")),
+        side: Side::White,
     };
 
     let mut e = DefaultEditor::new().expect("Could not open repl.");
