@@ -73,7 +73,7 @@ impl Board {
 
         for (ri, row) in rows.enumerate() {
             let mut norm = ri * 8;
-            for (i, c) in row.chars().enumerate() {
+            for (_i, c) in row.chars().enumerate() {
                 if c.is_ascii_digit() {
                     let modif = c.to_digit(10);
                     norm += modif.unwrap() as usize;

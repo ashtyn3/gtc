@@ -1,6 +1,6 @@
 use strum::{Display, EnumString};
 
-use crate::{bitboard::BitBoard, position::Position};
+
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Copy, EnumString, Display, Hash)]
 pub enum Side {

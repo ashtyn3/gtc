@@ -6,19 +6,16 @@ pub mod piece;
 pub mod position;
 mod repl;
 
-use core::panic;
+
 use std::{
-    cell::RefCell,
     env,
     io::{self, BufRead},
-    panic::{catch_unwind, set_hook},
-    pin::Pin,
-    sync::{mpsc, Arc, Mutex, RwLock},
+    panic::{set_hook},
     thread,
 };
 
-use clap::{arg, value_parser};
-use piece::Side;
+use clap::{arg};
+
 
 use crate::{
     game::Instance,
@@ -26,7 +23,7 @@ use crate::{
 };
 
 fn body(ctx: &mut Instance, new: bool) {
-    let args: Vec<String> = env::args().collect();
+    let _args: Vec<String> = env::args().collect();
 
     let mut cmd = clap::Command::new("gtc")
         .bin_name("gtc")

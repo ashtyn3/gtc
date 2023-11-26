@@ -5,7 +5,7 @@ Normalized: a single unsigned integer repersenting an index of a bit in a bitboa
 regular or non-normalized: a tuple containing a non-zero inclusive x and y (or column and row) pair of board position
 */
 
-use std::error::Error;
+
 pub type Position = (u64, u64);
 
 pub trait Normalizable {
