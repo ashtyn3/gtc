@@ -1,4 +1,3 @@
-
 use std::{collections::HashMap, sync::Arc};
 
 use bitvec::{prelude::Msb0, view::BitViewSized};
@@ -58,8 +57,9 @@ impl Instance {
             println!("{}'s turn", self.side);
             return;
         }
-        self.board.new_position(p, pos);
-        self.side = !self.side;
+        if self.board.new_position(p, pos) == true {
+            self.side = !self.side;
+        }
     }
 
     pub fn passive_tiles(&self) -> BitBoard {

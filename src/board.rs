@@ -366,29 +366,29 @@ impl Board {
         self.piece_bitboard(p).unwrap().set(to);
     }
 
-    /// Checks if move is valid and executes if valid. Errors out if not valid.
-    pub fn new_position(&mut self, p: Piece, to: Position) {
+    /// Checks if move is valid and executes if valid. Returns false if not valid.
+    pub fn new_position(&mut self, p: Piece, to: Position) -> bool {
         let mut target_bitb = BitBoard::new();
         target_bitb.set(to);
         let mmask = self.move_mask_raw(p);
         if mmask.is_err() {
             println!("{}", mmask.unwrap_err());
-            return;
+            return false;
         }
 
         if mmask.unwrap().num.data & target_bitb.num.data == 0 {
             if to.encode().is_err() {
                 println!("{}", to.encode().unwrap_err());
-                return;
+                return false;
             }
             let p_place = self.pos_from_piece(p);
             if p_place.is_err() {
                 println!("{}", p_place.unwrap_err());
-                return;
+                return false;
             }
             if p_place.unwrap().encode().is_err() {
                 println!("{}", p_place.unwrap().encode().unwrap_err());
-                return;
+                return false;
             }
             println!(
                 "Not valid move: {}{}-{}{}",
@@ -396,9 +396,11 @@ impl Board {
                 p_place.unwrap().encode().unwrap(),
                 p.encode(),
                 to.encode().unwrap()
-            )
+            );
+            return false;
         } else {
-            self.new_position_unsafe(p, to)
+            self.new_position_unsafe(p, to);
+            return true;
         }
     }
 }

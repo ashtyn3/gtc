@@ -33,7 +33,7 @@ def cmd(command):
 cmd("l")
 cmd("b")
 cmd("w")
-print(cmd("state"))
 print(cmd("m g 1b"))
 print(cmd("m x b2"))
+print(cmd("state"))
 print(cmd("b"))

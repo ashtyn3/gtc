@@ -38,7 +38,7 @@ pub fn read_state_file(ctx: &mut Instance, name: String) {
             println!("{}", pos.unwrap_err());
             return;
         }
-        ctx.board.new_position(p, pos.unwrap())
+        ctx.board.new_position(p, pos.unwrap());
     }
 
     println!("From: {}", ctx.board.encode());
