@@ -86,7 +86,7 @@ impl Board {
                     let (p, side) = dec.unwrap();
 
                     g.side_bitboard(side).num.set(norm, true);
-                    g.piece_bitboard(p).num.set(norm, true);
+                    g.piece_bitboard(p).unwrap().num.set(norm, true);
                     norm += 1;
                 }
             }
@@ -144,28 +144,31 @@ impl Board {
         }
     }
     /// gets corresponding bitboard for piece type
-    fn piece_bitboard(&mut self, s: Piece) -> &mut BitBoard {
+    fn piece_bitboard(&mut self, s: Piece) -> Result<&mut BitBoard, &'static str> {
         match s {
-            Piece::None => todo!(),
-            Piece::Goat(_) => &mut self.goats,
-            Piece::Horse(_) => &mut self.horses,
-            Piece::Sloth(_) => &mut self.sloths,
-            Piece::Bird(_) => &mut self.birds,
-            Piece::Tiger(_) => &mut self.tigers,
-            Piece::Bear(_) => &mut self.bears,
-            Piece::Snake(_) => &mut self.snakes,
-            Piece::MantisShrimp(_) => &mut self.mantis_shrimps,
+            Piece::None => Err("Invalid piece"),
+            Piece::Goat(_) => Ok(&mut self.goats),
+            Piece::Horse(_) => Ok(&mut self.horses),
+            Piece::Sloth(_) => Ok(&mut self.sloths),
+            Piece::Bird(_) => Ok(&mut self.birds),
+            Piece::Tiger(_) => Ok(&mut self.tigers),
+            Piece::Bear(_) => Ok(&mut self.bears),
+            Piece::Snake(_) => Ok(&mut self.snakes),
+            Piece::MantisShrimp(_) => Ok(&mut self.mantis_shrimps),
         }
     }
 
     /// Finds piece non-normalized position on board
-    pub fn pos_from_piece(self, p: Piece) -> Result<Position, &'static str> {
+    pub fn pos_from_piece(&mut self, p: Piece) -> Result<Position, &'static str> {
         let p_dec = Piece::decode(p.encode());
         if p_dec.is_err() {
             return Err(p_dec.unwrap_err());
         }
-        let bits = self.clone().piece_bitboard(p).num.data
-            & self.clone().side_bitboard(p_dec.unwrap().1).num.data;
+        let p_bitb = self.piece_bitboard(p);
+        if p_bitb.is_err() {
+            return Err(p_bitb.err().unwrap());
+        }
+        let bits = p_bitb.unwrap().num.data & self.clone().side_bitboard(p_dec.unwrap().1).num.data;
 
         let mut bitb = BitBoard::new();
         bitb.num = bits.into_bitarray();
@@ -221,7 +224,7 @@ impl Board {
         }
         println!();
         print!("  +");
-        for i in 0..8 {
+        for _ in 0..8 {
             print!("---+")
         }
         println!();
@@ -229,7 +232,7 @@ impl Board {
             if i % 8 == 0 && i != 0 {
                 println!();
                 print!("  +");
-                for i in 0..8 {
+                for _ in 0..8 {
                     print!("---+")
                 }
                 println!();
@@ -241,14 +244,14 @@ impl Board {
         }
         println!();
         print!("  +");
-        for i in 0..8 {
+        for _ in 0..8 {
             print!("---+")
         }
         println!();
     }
 
     /// Generates bitboard of possible moves from given position
-    pub fn move_mask_raw(self, p: Piece) -> Result<BitBoard, &'static str> {
+    pub fn move_mask_raw(&mut self, p: Piece) -> Result<BitBoard, &'static str> {
         let mut bitb = BitBoard::new();
         let pos = self.pos_from_piece(p);
 
@@ -342,7 +345,7 @@ impl Board {
             let (target_piece, side) = target_enc.unwrap();
 
             self.side_bitboard(side).set(to);
-            self.piece_bitboard(target_piece).set(to);
+            self.piece_bitboard(target_piece).unwrap().set(to);
         }
         let p_enc = Piece::decode(p.encode());
         if p_enc.is_err() {
@@ -357,10 +360,10 @@ impl Board {
             return;
         }
         self.side_bitboard(act_side).set(act_pos.unwrap());
-        self.piece_bitboard(p).set(act_pos.unwrap());
+        self.piece_bitboard(p).unwrap().set(act_pos.unwrap());
 
         self.side_bitboard(act_side).set(to);
-        self.piece_bitboard(p).set(to);
+        self.piece_bitboard(p).unwrap().set(to);
     }
 
     /// Checks if move is valid and executes if valid. Errors out if not valid.

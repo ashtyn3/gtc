@@ -65,7 +65,11 @@ pub fn decode_position(p: String) -> Result<Position, &'static str> {
     }
     let row = parts[0];
     let column = parts[1];
-    let mut pos = (column.to_digit(10).unwrap() as u64, 0);
+    let column_dig = column.to_digit(10);
+    if column_dig.is_none() {
+        return Err("invalid position string");
+    }
+    let mut pos = (column_dig.unwrap() as u64, 0);
 
     pos.1 = match row.to_string().as_str() {
         "a" => 1,
@@ -77,7 +81,7 @@ pub fn decode_position(p: String) -> Result<Position, &'static str> {
         "g" => 7,
         "h" => 8,
         _ => 0,
-    };
+    } as u64;
 
     Ok(pos)
 }
