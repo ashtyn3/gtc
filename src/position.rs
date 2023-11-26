@@ -4,6 +4,8 @@ Positions have two types:
 Normalized: a single unsigned integer repersenting an index of a bit in a bitboard.
 regular or non-normalized: a tuple containing a non-zero inclusive x and y (or column and row) pair of board position
 */
+
+use std::error::Error;
 pub type Position = (u64, u64);
 
 pub trait Normalizable {
@@ -11,8 +13,8 @@ pub trait Normalizable {
         return 0;
     }
 
-    fn encode(&self) -> String {
-        return "".to_string();
+    fn encode(&self) -> Result<String, &str> {
+        return Ok("".to_string());
     }
     fn is_valid(&self) -> bool {
         return true;
@@ -36,7 +38,7 @@ impl Normalizable for Position {
         return true;
     }
 
-    fn encode(&self) -> String {
+    fn encode(&self) -> Result<String, &str> {
         let mut coords: [String; 2] = ["".to_string(), "".to_string()];
 
         match self.1 {
@@ -48,16 +50,19 @@ impl Normalizable for Position {
             6 => coords[0] = "f".to_string(),
             7 => coords[0] = "g".to_string(),
             8 => coords[0] = "h".to_string(),
-            _ => panic!("invalid position"),
-        }
+            _ => return Err("invalid position"),
+        };
 
         coords[1] = self.0.to_string();
 
-        coords.join("").to_string()
+        Ok(coords.join("").to_string())
     }
 }
-pub fn decode_position(p: String) -> Position {
+pub fn decode_position(p: String) -> Result<Position, &'static str> {
     let parts = p.chars().collect::<Vec<char>>();
+    if parts.len() < 2 {
+        return Err("invalid position string");
+    }
     let row = parts[0];
     let column = parts[1];
     let mut pos = (column.to_digit(10).unwrap() as u64, 0);
@@ -74,5 +79,5 @@ pub fn decode_position(p: String) -> Position {
         _ => 0,
     };
 
-    pos
+    Ok(pos)
 }

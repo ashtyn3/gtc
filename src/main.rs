@@ -12,18 +12,20 @@ use std::{
     env,
     io::{self, BufRead},
     panic::{catch_unwind, set_hook},
-    sync::{Arc, RwLock},
+    pin::Pin,
+    sync::{mpsc, Arc, Mutex, RwLock},
     thread,
 };
 
 use clap::{arg, value_parser};
+use piece::Side;
 
 use crate::{
     game::Instance,
     repl::{blank_instance, run},
 };
 
-fn body(new: bool) {
+fn body(ctx: &mut Instance, new: bool) {
     let args: Vec<String> = env::args().collect();
 
     let mut cmd = clap::Command::new("gtc")
@@ -43,7 +45,6 @@ fn body(new: bool) {
                 println!("gtc {}", env!("CARGO_PKG_VERSION"))
             };
             let stdin = io::stdin();
-            let ctx: &mut Instance = &mut blank_instance();
             for line in stdin.lock().lines() {
                 let data = line.unwrap().clone();
                 if data == "quit" {
@@ -63,18 +64,25 @@ fn main() {
     let mut new: bool = true;
     set_hook(Box::new(|info| {
         if info.message().is_some() {
+            #[cfg(not(debug_assertions))]
             println!("{}", info.message().unwrap());
+
+            #[cfg(debug_assertions)]
+            println!("{}", info)
         } else {
             println!("{}", info);
         }
     }));
-    loop {
-        let status = thread::spawn(move || body(new));
+    thread::scope(|scope| loop {
+        let mut inst: Instance = blank_instance();
+        let status = scope.spawn(move || {
+            body(&mut inst, new);
+        });
         let res = status.join();
         if !res.is_err() || res.is_ok() {
             break;
         } else {
             new = false;
         }
-    }
+    });
 }

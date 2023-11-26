@@ -19,7 +19,12 @@ pub fn read_state_file(ctx: &mut Instance, name: String) {
     ctx.states = raw.into();
 
     let head_parts = parts[0].split_whitespace().collect::<Vec<&str>>();
-    ctx.board = Board::decode(head_parts[0].to_string());
+    let b_enc = Board::decode(head_parts[0].to_string());
+    if b_enc.is_err() {
+        println!("{}", b_enc.unwrap_err());
+        return;
+    }
+    ctx.board = b_enc.unwrap();
     ctx.side = Side::from_str(head_parts[1]).unwrap();
 
     for m in parts[1].split(",") {
@@ -27,9 +32,13 @@ pub fn read_state_file(ctx: &mut Instance, name: String) {
             continue;
         }
         let move_parts: Vec<&str> = m.split(" ").collect();
-        let (p, _) = Piece::decode(move_parts[0].to_string());
+        let (p, _) = Piece::decode(move_parts[0].to_string()).unwrap();
         let pos = decode_position(move_parts[1].to_string());
-        ctx.board.make_move(p, pos)
+        if pos.is_err() {
+            println!("{}", pos.unwrap_err());
+            return;
+        }
+        ctx.board.new_position(p, pos.unwrap())
     }
 
     println!("From: {}", ctx.board.encode());
@@ -39,7 +48,11 @@ pub fn cmd(ctx: &mut Instance, s: &str, prot: bool) {
     match s[0] {
         "l" | "load" => {
             if s.len() > 1 {
-                ctx.board = Board::decode(s[1].to_string());
+                let b_enc = Board::decode(s[1].to_string());
+                if b_enc.is_err() {
+                    println!("{}", b_enc.unwrap_err())
+                }
+                ctx.board = b_enc.unwrap();
                 println!("loaded: {}", ctx.board.encode());
             } else {
                 ctx.board = Board::new()
@@ -66,14 +79,43 @@ pub fn cmd(ctx: &mut Instance, s: &str, prot: bool) {
                 }
                 return;
             }
-            let (p, _) = Piece::decode(s[1].to_string());
+            let p_enc = Piece::decode(s[1].to_string());
+            if p_enc.is_err() {
+                println!("{}", p_enc.unwrap_err());
+                return;
+            }
+            let (p, _) = p_enc.unwrap();
             let start_pos = ctx.board.pos_from_piece(p);
+            if start_pos.is_err() {
+                println!("{}", start_pos.unwrap_err());
+                return;
+            }
             if !prot {
                 println!("moves:");
             }
-            for one in ctx.board.move_mask_raw(p).num.iter_ones() {
-                let pos = Board::normal_to_pos(one as u64).encode();
-                println!("{}{}-{}{}", s[1], start_pos.encode(), s[1], pos);
+            let mm = ctx.board.move_mask_raw(p);
+            if mm.is_err() {
+                println!("{}", mm.unwrap_err());
+                return;
+            }
+            for one in mm.unwrap().num.iter_ones() {
+                let pos = Board::normal_to_pos(one as u64);
+                if pos.encode().is_err() {
+                    println!("{}", pos.encode().unwrap_err());
+                    return;
+                }
+                let sp = start_pos.unwrap();
+                if sp.encode().is_err() {
+                    println!("{}", sp.encode().unwrap_err());
+                    return;
+                }
+                println!(
+                    "{}{}-{}{}",
+                    s[1],
+                    sp.encode().unwrap(),
+                    s[1],
+                    pos.encode().unwrap()
+                );
             }
         }
         "m" | "move" => {
@@ -83,9 +125,19 @@ pub fn cmd(ctx: &mut Instance, s: &str, prot: bool) {
                 }
                 return;
             }
-            let (p, _) = Piece::decode(s[1].to_string());
+            let p_enc = Piece::decode(s[1].to_string());
+
+            if p_enc.is_err() {
+                println!("{}", p_enc.unwrap_err());
+                return;
+            }
+            let (p, _) = p_enc.unwrap();
             let pos = decode_position(s[2].to_string());
-            ctx.board.make_move(p, pos);
+            if pos.is_err() {
+                println!("{}", pos.unwrap_err());
+                return;
+            }
+            ctx.make_move(p, pos.unwrap());
             Arc::get_mut(&mut ctx.states)
                 .unwrap()
                 .push_str(format!("{} {},", s[1], s[2]).as_str());

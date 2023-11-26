@@ -44,7 +44,7 @@ impl Piece {
         }
     }
     /// Converts Tile Notation to piece
-    pub fn decode(code: String) -> (Piece, Side) {
+    pub fn decode(code: String) -> Result<(Piece, Side), &'static str> {
         let mut side: Side = Side::White;
         if code.chars().next().unwrap().is_uppercase() {
             side = Side::Orange;
@@ -67,9 +67,9 @@ impl Piece {
             'b' => Piece::Bear(side),
             'l' => Piece::Snake(side),
             'm' => Piece::MantisShrimp(side),
-            c => panic!("bad decode {}", c),
+            _ => Piece::None,
         };
 
-        (p, side)
+        Ok((p, side))
     }
 }

@@ -3,8 +3,14 @@ use std::{collections::HashMap, sync::Arc};
 
 use bitvec::{prelude::Msb0, view::BitViewSized};
 
-use crate::{bitboard::BitBoard, board::Board, piece::Side};
+use crate::{
+    bitboard::BitBoard,
+    board::Board,
+    piece::{Piece, Side},
+    position::Position,
+};
 
+#[derive(Clone)]
 pub struct Instance {
     pub board: Board,
     pub side: Side,
@@ -44,6 +50,16 @@ impl Instance {
                 BitBoard::from_bitarray(edge_data.into_bitarray::<Msb0>())
             }
         }
+    }
+
+    pub fn make_move(&mut self, p: Piece, pos: Position) {
+        let (_, side) = Piece::decode(p.encode()).unwrap();
+        if side != self.side {
+            println!("{}'s turn", self.side);
+            return;
+        }
+        self.board.new_position(p, pos);
+        self.side = !self.side;
     }
 
     pub fn passive_tiles(&self) -> BitBoard {

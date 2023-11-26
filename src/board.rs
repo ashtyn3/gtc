@@ -56,7 +56,7 @@ impl Board {
     }
 
     /// Decodes board string into a Game instance
-    pub fn decode(code: String) -> Self {
+    pub fn decode(code: String) -> Result<Self, &'static str> {
         let rows = code.split("/");
         let mut g = Board {
             goats: BitBoard::new(),
@@ -78,7 +78,12 @@ impl Board {
                     let modif = c.to_digit(10);
                     norm += modif.unwrap() as usize;
                 } else {
-                    let (p, side) = Piece::decode(c.to_string());
+                    let dec = Piece::decode(c.to_string());
+
+                    if dec.is_err() {
+                        return Err(dec.unwrap_err());
+                    }
+                    let (p, side) = dec.unwrap();
 
                     g.side_bitboard(side).num.set(norm, true);
                     g.piece_bitboard(p).num.set(norm, true);
@@ -86,7 +91,7 @@ impl Board {
                 }
             }
         }
-        g
+        Ok(g)
     }
 
     /// returns bitboard of combined side state (white | orange)
@@ -154,19 +159,19 @@ impl Board {
     }
 
     /// Finds piece non-normalized position on board
-    pub fn pos_from_piece(self, p: Piece) -> Position {
+    pub fn pos_from_piece(self, p: Piece) -> Result<Position, &'static str> {
+        let p_dec = Piece::decode(p.encode());
+        if p_dec.is_err() {
+            return Err(p_dec.unwrap_err());
+        }
         let bits = self.clone().piece_bitboard(p).num.data
-            & self
-                .clone()
-                .side_bitboard(Piece::decode(p.encode()).1)
-                .num
-                .data;
+            & self.clone().side_bitboard(p_dec.unwrap().1).num.data;
 
         let mut bitb = BitBoard::new();
         bitb.num = bits.into_bitarray();
         let i = bitb.num.first_one().unwrap();
 
-        return Board::normal_to_pos(i as u64);
+        return Ok(Board::normal_to_pos(i as u64));
     }
 
     /// Converts normalized position to position
@@ -243,13 +248,18 @@ impl Board {
     }
 
     /// Generates bitboard of possible moves from given position
-    pub fn move_mask_raw(self, p: Piece) -> BitBoard {
+    pub fn move_mask_raw(self, p: Piece) -> Result<BitBoard, &'static str> {
         let mut bitb = BitBoard::new();
         let pos = self.pos_from_piece(p);
 
+        if pos.is_err() {
+            return Err(pos.unwrap_err());
+        }
+        let pos = pos.unwrap();
+
         match p {
-            Piece::None => bitb,
-            Piece::Goat(_) | Piece::Horse(_) | Piece::Bird(_) => BitBoard::from_bitarray(
+            Piece::None => Ok(bitb),
+            Piece::Goat(_) | Piece::Horse(_) | Piece::Bird(_) => Ok(BitBoard::from_bitarray(
                 (!self.board_state().data
                     & bitb
                         .set((pos.0 + 1, pos.1))
@@ -263,8 +273,8 @@ impl Board {
                         .num
                         .data)
                     .into_bitarray(),
-            ),
-            Piece::Sloth(_) => BitBoard::from_bitarray(
+            )),
+            Piece::Sloth(_) => Ok(BitBoard::from_bitarray(
                 (!self.board_state().data
                     & bitb
                         .set((pos.0 + 1, pos.1))
@@ -274,7 +284,7 @@ impl Board {
                         .num
                         .data)
                     .into_bitarray(),
-            ),
+            )),
             // TODO: Add consumption moves and account for forward direction depennding on side
             // (white forward = y+1 and orange forward = y-1)
             Piece::Tiger(s) | Piece::Bear(s) | Piece::MantisShrimp(s) | Piece::Snake(s) => {
@@ -304,10 +314,10 @@ impl Board {
                     .set((pos.0 + 1, pos.1 - 1))
                     .set((pos.0 - 1, pos.1 - 1));
 
-                BitBoard::from_bitarray(
+                Ok(BitBoard::from_bitarray(
                     ((!self.board_state().data & base_mask.num.data) | consume_mask.num.data)
                         .into_bitarray(),
-                )
+                ))
             }
         }
     }
@@ -316,45 +326,76 @@ impl Board {
     /// Modifies game state by moving a piece to a given position without verifying with game
     /// rules.
     // Possibly make more efficient use bitwise operations and less array operations
-    fn make_move_unsafe(&mut self, p: Piece, to: Position) {
+    fn new_position_unsafe(&mut self, p: Piece, to: Position) {
         let mut binding = BitBoard::new();
         let target_bitb = binding.set(to);
 
         let target_is_piece = self.board_state().data & target_bitb.num.data;
         if target_is_piece > 0 {
             let target_norm = target_bitb.num.first_one().unwrap();
-            let (target_piece, side) =
-                Piece::decode(self.piece_from_norm(target_norm as u64).encode());
+            let norm_enc = self.piece_from_norm(target_norm as u64).encode();
+            let target_enc = Piece::decode(norm_enc);
+            if target_enc.is_err() {
+                println!("{}", target_enc.unwrap_err());
+                return;
+            }
+            let (target_piece, side) = target_enc.unwrap();
 
             self.side_bitboard(side).set(to);
             self.piece_bitboard(target_piece).set(to);
         }
-        let (_, act_side) = Piece::decode(p.encode());
+        let p_enc = Piece::decode(p.encode());
+        if p_enc.is_err() {
+            println!("{}", p_enc.unwrap_err());
+            return;
+        }
+        let (_, act_side) = p_enc.unwrap();
 
         let act_pos = self.pos_from_piece(p);
-        self.side_bitboard(act_side).set(act_pos);
-        self.piece_bitboard(p).set(act_pos);
+        if act_pos.is_err() {
+            println!("{}", act_pos.unwrap_err());
+            return;
+        }
+        self.side_bitboard(act_side).set(act_pos.unwrap());
+        self.piece_bitboard(p).set(act_pos.unwrap());
 
         self.side_bitboard(act_side).set(to);
         self.piece_bitboard(p).set(to);
     }
 
     /// Checks if move is valid and executes if valid. Errors out if not valid.
-    pub fn make_move(&mut self, p: Piece, to: Position) {
+    pub fn new_position(&mut self, p: Piece, to: Position) {
         let mut target_bitb = BitBoard::new();
         target_bitb.set(to);
         let mmask = self.move_mask_raw(p);
+        if mmask.is_err() {
+            println!("{}", mmask.unwrap_err());
+            return;
+        }
 
-        if mmask.num.data & target_bitb.num.data == 0 {
-            panic!(
-                "Not valid move! {}{}-{}{}",
+        if mmask.unwrap().num.data & target_bitb.num.data == 0 {
+            if to.encode().is_err() {
+                println!("{}", to.encode().unwrap_err());
+                return;
+            }
+            let p_place = self.pos_from_piece(p);
+            if p_place.is_err() {
+                println!("{}", p_place.unwrap_err());
+                return;
+            }
+            if p_place.unwrap().encode().is_err() {
+                println!("{}", p_place.unwrap().encode().unwrap_err());
+                return;
+            }
+            println!(
+                "Not valid move: {}{}-{}{}",
                 p.encode(),
-                self.pos_from_piece(p).encode(),
+                p_place.unwrap().encode().unwrap(),
                 p.encode(),
-                to.encode()
+                to.encode().unwrap()
             )
         } else {
-            self.make_move_unsafe(p, to)
+            self.new_position_unsafe(p, to)
         }
     }
 }
