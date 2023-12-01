@@ -73,6 +73,19 @@ impl Instance {
                 .into(),
         );
     }
+
+    pub fn aggressive_tiles(&self) -> BitBoard {
+        let b = self.board.board_state().data;
+
+        return BitBoard::from_bitarray(
+            (b & self.board.tigers.num.data
+                | b & self.board.bears.num.data
+                | b & self.board.snakes.num.data
+                | b & self.board.mantis_shrimps.num.data)
+                .into(),
+        );
+    }
+
     pub fn has_passiveless(&self) -> HashMap<Side, bool> {
         let mut hmap = HashMap::from([(Side::White, false), (Side::Orange, false)]);
 
@@ -125,6 +138,14 @@ impl Instance {
         let passives = self.has_passiveless();
 
         if align.0 == true || align.1 == true || *passives.get(&(!self.side)).unwrap() == true {
+            return true;
+        }
+
+        return false;
+    }
+
+    pub fn has_stalemate(&self) -> bool {
+        if self.aggressive_tiles().num.count_ones() == 4 {
             return true;
         }
 

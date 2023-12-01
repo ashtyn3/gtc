@@ -177,10 +177,12 @@ pub fn cmd(ctx: &mut Instance, s: &str, prot: bool) {
                     ctx.has_alignment().1
                 );
                 println!();
+                println!("Stalemate: {}", ctx.has_stalemate());
+                println!();
                 println!("win ({}): {}", ctx.side, ctx.has_win())
             } else {
                 println!(
-                    "Passive_defeat:\n  white: {:?}\n  orange: {:?}",
+                    "passive_defeat:\n  white: {:?}\n  orange: {:?}",
                     ctx.has_passiveless()[&Side::White],
                     ctx.has_passiveless()[&Side::Orange]
                 );
@@ -190,6 +192,8 @@ pub fn cmd(ctx: &mut Instance, s: &str, prot: bool) {
                     ctx.has_alignment().0,
                     ctx.has_alignment().1
                 );
+                println!();
+                println!("stalemate: {}", ctx.has_stalemate());
                 println!();
                 println!("win: {}", ctx.has_win())
             }
