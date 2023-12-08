@@ -12,7 +12,7 @@ pub struct Board {
     pub birds: BitBoard,
 
     pub tigers: BitBoard,
-    pub bears: BitBoard,
+    pub otters: BitBoard,
     pub snakes: BitBoard,
     pub mantis_shrimps: BitBoard,
 
@@ -27,7 +27,7 @@ impl Board {
             goats: BitBoard::new().set((1, 1)).set((1, 8)),
             horses: BitBoard::new().set((2, 1)).set((2, 8)),
             tigers: BitBoard::new().set((3, 1)).set((3, 8)),
-            bears: BitBoard::new().set((4, 1)).set((4, 8)),
+            otters: BitBoard::new().set((4, 1)).set((4, 8)),
             snakes: BitBoard::new().set((5, 1)).set((5, 8)),
             mantis_shrimps: BitBoard::new().set((6, 1)).set((6, 8)),
             sloths: BitBoard::new().set((7, 1)).set((7, 8)),
@@ -45,7 +45,7 @@ impl Board {
             goats: BitBoard::new(),
             horses: BitBoard::new(),
             tigers: BitBoard::new(),
-            bears: BitBoard::new(),
+            otters: BitBoard::new(),
             snakes: BitBoard::new(),
             mantis_shrimps: BitBoard::new(),
             sloths: BitBoard::new(),
@@ -62,7 +62,7 @@ impl Board {
             goats: BitBoard::new(),
             horses: BitBoard::new(),
             tigers: BitBoard::new(),
-            bears: BitBoard::new(),
+            otters: BitBoard::new(),
             snakes: BitBoard::new(),
             mantis_shrimps: BitBoard::new(),
             sloths: BitBoard::new(),
@@ -121,8 +121,8 @@ impl Board {
             return Piece::Horse(side);
         } else if temp_bitboard.num.data & self.tigers.num.data > 0 {
             return Piece::Tiger(side);
-        } else if temp_bitboard.num.data & self.bears.num.data > 0 {
-            return Piece::Bear(side);
+        } else if temp_bitboard.num.data & self.otters.num.data > 0 {
+            return Piece::Otter(side);
         } else if temp_bitboard.num.data & self.snakes.num.data > 0 {
             return Piece::Snake(side);
         } else if temp_bitboard.num.data & self.mantis_shrimps.num.data > 0 {
@@ -152,7 +152,7 @@ impl Board {
             Piece::Sloth(_) => Ok(&mut self.sloths),
             Piece::Bird(_) => Ok(&mut self.birds),
             Piece::Tiger(_) => Ok(&mut self.tigers),
-            Piece::Bear(_) => Ok(&mut self.bears),
+            Piece::Otter(_) => Ok(&mut self.otters),
             Piece::Snake(_) => Ok(&mut self.snakes),
             Piece::MantisShrimp(_) => Ok(&mut self.mantis_shrimps),
         }
@@ -262,21 +262,27 @@ impl Board {
 
         match p {
             Piece::None => Ok(bitb),
-            Piece::Goat(_) | Piece::Horse(_) | Piece::Bird(_) => Ok(BitBoard::from_bitarray(
-                (!self.board_state().data
-                    & bitb
-                        .set((pos.0 + 1, pos.1))
-                        .set((pos.0 - 1, pos.1))
-                        .set((pos.0, pos.1 + 1))
-                        .set((pos.0, pos.1 - 1))
-                        .set((pos.0 + 1, pos.1 + 1))
-                        .set((pos.0 - 1, pos.1 + 1))
-                        .set((pos.0 - 1, pos.1 - 1))
-                        .set((pos.0 + 1, pos.1 - 1))
-                        .num
-                        .data)
-                    .into_bitarray(),
-            )),
+            Piece::Goat(_) | Piece::Horse(_) | Piece::Bird(_) => {
+                if pos.0 < 8 {
+                    bitb.set((pos.0 + 1, pos.1)).set((pos.0 + 1, pos.1));
+                }
+                if pos.0 < 8 && pos.1 < 8 {
+                    bitb.set((pos.0 + 1, pos.1 + 1));
+                }
+                Ok(BitBoard::from_bitarray(
+                    (!self.board_state().data
+                        & bitb
+                            .set((pos.0 - 1, pos.1))
+                            .set((pos.0, pos.1 + 1))
+                            .set((pos.0, pos.1 - 1))
+                            .set((pos.0 - 1, pos.1 + 1))
+                            .set((pos.0 - 1, pos.1 - 1))
+                            .set((pos.0 + 1, pos.1 - 1))
+                            .num
+                            .data)
+                        .into_bitarray(),
+                ))
+            }
             Piece::Sloth(_) => Ok(BitBoard::from_bitarray(
                 (!self.board_state().data
                     & bitb
@@ -288,9 +294,7 @@ impl Board {
                         .data)
                     .into_bitarray(),
             )),
-            // TODO: Add consumption moves and account for forward direction depennding on side
-            // (white forward = y+1 and orange forward = y-1)
-            Piece::Tiger(s) | Piece::Bear(s) | Piece::MantisShrimp(s) | Piece::Snake(s) => {
+            Piece::Tiger(s) | Piece::Otter(s) | Piece::MantisShrimp(s) | Piece::Snake(s) => {
                 let mut consume_mask: BitBoard = BitBoard::new();
                 match s {
                     Side::Orange => {

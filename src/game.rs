@@ -9,7 +9,7 @@ use crate::{
     position::Position,
 };
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Instance {
     pub board: Board,
     pub side: Side,
@@ -38,6 +38,12 @@ const SLOTH_E_NUMBER: u64 =
     0b00000001_00000001_00000001_00000001_00000001_00000001_00000001_00000001;
 
 impl Instance {
+    pub fn game_set(&self) -> bool {
+        if self.board.board_state().data == 0 {
+            return false;
+        }
+        return true;
+    }
     pub fn active_edges(&self, side: Side) -> BitBoard {
         match side {
             Side::White => {
@@ -79,7 +85,7 @@ impl Instance {
 
         return BitBoard::from_bitarray(
             (b & self.board.tigers.num.data
-                | b & self.board.bears.num.data
+                | b & self.board.otters.num.data
                 | b & self.board.snakes.num.data
                 | b & self.board.mantis_shrimps.num.data)
                 .into(),

@@ -1,14 +1,15 @@
 use strum::{Display, EnumString};
 
-
-
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Copy, EnumString, Display, Hash)]
+#[derive(
+    Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Copy, EnumString, Display, Hash, Default,
+)]
 pub enum Side {
+    #[default]
     Orange = 0,
     White,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Copy)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Copy, EnumString, Display)]
 pub enum Piece {
     None,
     Goat(Side),
@@ -16,7 +17,7 @@ pub enum Piece {
     Sloth(Side),
     Bird(Side),
     Tiger(Side),
-    Bear(Side),
+    Otter(Side),
     Snake(Side),
     MantisShrimp(Side),
 }
@@ -38,7 +39,7 @@ impl Piece {
             Piece::Sloth(side) => self.side_encode('s', side),
             Piece::Bird(side) => self.side_encode('i', side),
             Piece::Tiger(side) => self.side_encode('t', side),
-            Piece::Bear(side) => self.side_encode('b', side),
+            Piece::Otter(side) => self.side_encode('o', side),
             Piece::Snake(side) => self.side_encode('l', side),
             Piece::MantisShrimp(side) => self.side_encode('m', side),
         }
@@ -64,7 +65,7 @@ impl Piece {
             's' => Piece::Sloth(side),
             'i' => Piece::Bird(side),
             't' => Piece::Tiger(side),
-            'b' => Piece::Bear(side),
+            'o' => Piece::Otter(side),
             'l' => Piece::Snake(side),
             'm' => Piece::MantisShrimp(side),
             _ => Piece::None,

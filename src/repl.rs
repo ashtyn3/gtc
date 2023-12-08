@@ -199,6 +199,8 @@ pub fn cmd(ctx: &mut Instance, s: &str, prot: bool) {
             }
         }
         "ping" => println!("ok"),
+        "set" => println!("{}", ctx.game_set()),
+        "turn" | "t" => println!("{}", ctx.side),
 
         _ => return,
     }
