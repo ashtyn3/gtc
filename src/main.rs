@@ -6,16 +6,14 @@ pub mod piece;
 pub mod position;
 mod repl;
 
-
 use std::{
     env,
     io::{self, BufRead},
-    panic::{set_hook},
+    panic::set_hook,
     thread,
 };
 
-use clap::{arg};
-
+use clap::arg;
 
 use crate::{
     game::Instance,
