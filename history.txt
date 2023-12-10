@@ -1,0 +1,18 @@
+#V2
+l
+b
+m i b8
+m i g8
+m I g8
+b
+m i c8
+b
+m I f8
+b
+m i d8
+b
+m I e8
+b
+g I
+m I d8
+m i e8

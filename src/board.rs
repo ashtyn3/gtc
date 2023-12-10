@@ -269,6 +269,9 @@ impl Board {
                 if pos.0 < 8 && pos.1 < 8 {
                     bitb.set((pos.0 + 1, pos.1 + 1));
                 }
+                if pos.0 < 8 && pos.1 > 1 {
+                    bitb.set((pos.0 + 1, pos.1 - 1));
+                }
                 Ok(BitBoard::from_bitarray(
                     (!self.board_state().data
                         & bitb
@@ -277,7 +280,6 @@ impl Board {
                             .set((pos.0, pos.1 - 1))
                             .set((pos.0 - 1, pos.1 + 1))
                             .set((pos.0 - 1, pos.1 - 1))
-                            .set((pos.0 + 1, pos.1 - 1))
                             .num
                             .data)
                         .into_bitarray(),
@@ -294,7 +296,11 @@ impl Board {
                         .data)
                     .into_bitarray(),
             )),
-            Piece::Tiger(s) | Piece::Otter(s) | Piece::MantisShrimp(s) | Piece::Snake(s) => {
+            Piece::Tiger(s)
+            | Piece::Otter(s)
+            | Piece::MantisShrimp(s)
+            | Piece::Snake(s)
+            | Piece::Bird(s) => {
                 let mut consume_mask: BitBoard = BitBoard::new();
                 match s {
                     Side::Orange => {
