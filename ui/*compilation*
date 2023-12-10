@@ -1,0 +1,83 @@
+-*- mode: compilation; default-directory: "/Users/ashtynmorel-blake/code/gtc" -*-
+Compilation started at Fri Dec  8 16:23:51
+
+cargo run
+warning: unused imports: `BufRead`, `Read`, `Write`, `str::FromStr`
+ --> src/main.rs:2:10
+  |
+2 |     io::{BufRead, Read, Write},
+  |          ^^^^^^^  ^^^^  ^^^^^
+3 |     str::FromStr,
+  |     ^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` on by default
+
+warning: unused import: `sprite::Material2d`
+ --> src/main.rs:8:5
+  |
+8 |     sprite::Material2d,
+  |     ^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `gtc::position::Normalizable`
+  --> src/main.rs:11:5
+   |
+11 | use gtc::position::Normalizable;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unnecessary parentheses around method argument
+  --> src/main.rs:26:22
+   |
+26 |         .add_plugins((DefaultPlugins
+   |                      ^
+...
+34 |             .set(ImagePlugin::default_nearest())))
+   |                                                 ^
+   |
+   = note: `#[warn(unused_parens)]` on by default
+help: remove these parentheses
+   |
+26 ~         .add_plugins(DefaultPlugins
+27 |             .set(WindowPlugin {
+ ...
+33 |             })
+34 ~             .set(ImagePlugin::default_nearest()))
+   |
+
+warning: unused variable: `cmd`
+ --> src/proc.rs:6:9
+  |
+6 |     let cmd = match Command::new("gtc")
+  |         ^^^ help: if this is intentional, prefix it with an underscore: `_cmd`
+  |
+  = note: `#[warn(unused_variables)]` on by default
+
+warning: taking a mutable reference to a `const` item
+   --> src/init.rs:79:13
+    |
+79  |             Color::ORANGE.set_a(0.9).clone()
+    |             ^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = note: each usage of a `const` item creates a new temporary
+    = note: the mutable reference will refer to this temporary, not the original `const` item
+note: mutable reference created due to call to this method
+   --> /Users/ashtynmorel-blake/.cargo/registry/src/index.crates.io-6f17d22bba15001f/bevy_render-0.12.1/src/color/mod.rs:533:5
+    |
+533 |     pub fn set_a(&mut self, a: f32) -> &mut Self {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+note: `const` item defined here
+   --> /Users/ashtynmorel-blake/.cargo/registry/src/index.crates.io-6f17d22bba15001f/bevy_render-0.12.1/src/color/mod.rs:109:5
+    |
+109 |     pub const ORANGE: Color = Color::rgb(1.0, 0.65, 0.0);
+    |     ^^^^^^^^^^^^^^^^^^^^^^^
+    = note: `#[warn(const_item_mutation)]` on by default
+
+warning: `goats_and_tigers` (bin "goats_and_tigers") generated 6 warnings (run `cargo fix --bin "goats_and_tigers"` to apply 5 suggestions)
+    Finished dev [unoptimized + debuginfo] target(s) in 0.14s
+     Running `target/debug/goats_and_tigers`
+2023-12-08T21:23:51.820346Z  INFO bevy_render::renderer: AdapterInfo { name: "Apple M2", vendor: 0, device: 0, device_type: IntegratedGpu, driver: "", driver_info: "", backend: Metal }
+2023-12-08T21:23:52.166963Z  INFO bevy_winit::system: Creating new window "Goats and Tigers (the game)" (0v0)
+Ok((1, 2))
+2023-12-08T21:23:55.254580Z  WARN bevy_ecs::world: error[B0003]: Could not despawn entity 99v0 because it doesn't exist in this World.
+Ok((1, 7))
+2023-12-08T21:23:57.990174Z  WARN bevy_ecs::world: error[B0003]: Could not despawn entity 100v1 because it doesn't exist in this World.
+
