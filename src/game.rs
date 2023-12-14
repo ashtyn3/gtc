@@ -14,6 +14,9 @@ pub struct Instance {
     pub board: Board,
     pub side: Side,
     pub states: Arc<String>,
+    pub call: HashMap<Side, bool>,
+    pub miss_call: HashMap<Side, bool>,
+    pub last_move: HashMap<Side, Piece>,
 }
 
 impl std::ops::Not for Side {
@@ -63,7 +66,24 @@ impl Instance {
             println!("{}'s turn", self.side);
             return;
         }
+        if *self.miss_call.get(&self.side).unwrap() == true {
+            let last_piece = *self.last_move.get(&self.side).unwrap();
+            if last_piece == Piece::None {
+                *self.miss_call.get_mut(&self.side).unwrap() = false;
+                self.side = !self.side;
+            } else {
+                if self.board.unsafe_miss_call_position(last_piece, pos) == true {
+                    *self.miss_call.get_mut(&self.side).unwrap() = false;
+                    self.side = !self.side;
+                    return;
+                } else {
+                    return;
+                }
+            }
+        }
         if self.board.new_position(p, pos) == true {
+            self.has_win();
+            *self.last_move.get_mut(&self.side).unwrap() = p;
             self.side = !self.side;
         }
     }
@@ -139,15 +159,30 @@ impl Instance {
         return (has_g_side, has_s_side);
     }
 
-    pub fn has_win(&self) -> bool {
+    pub fn has_win(&mut self) -> bool {
         let align = self.has_alignment();
         let passives = self.has_passiveless();
 
+        let mut winable = false;
         if align.0 == true || align.1 == true || *passives.get(&(!self.side)).unwrap() == true {
-            return true;
+            winable = true;
         }
 
-        return false;
+        if self.call.get(&self.side).unwrap().to_owned() == false && winable == true {
+            self.miss_call.insert(self.side, true);
+            return false;
+        }
+
+        return winable;
+    }
+
+    pub fn has_miss_call(&mut self) -> bool {
+        return self.miss_call.get(&self.side).unwrap().to_owned();
+    }
+
+    pub fn call_win(&mut self) {
+        *self.call.get_mut(&self.side).unwrap() = true;
+        self.side = !self.side;
     }
 
     pub fn has_stalemate(&self) -> bool {

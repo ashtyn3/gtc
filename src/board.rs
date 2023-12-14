@@ -415,6 +415,29 @@ impl Board {
         self.piece_bitboard(p).unwrap().set(to);
     }
 
+    /// Moves piece piece back to any position in home.
+    /// Marked unsafe because does not verify piece being the last moved.
+    pub fn unsafe_miss_call_position(&mut self, p: Piece, to: Position) -> bool {
+        let mut target_bitb = BitBoard::new();
+        target_bitb.set(to);
+
+        let mut valid_bitb = BitBoard::new();
+        let (_, s) = Piece::decode(p.encode()).unwrap();
+
+        match s {
+            Side::Orange => valid_bitb.fill_range(56..64),
+            Side::White => valid_bitb.fill_range(0..8),
+        };
+
+        if target_bitb.num.data & valid_bitb.num.data == 0 {
+            println!("Invalid miss-call position");
+            return false;
+        } else {
+            self.new_position_unsafe(p, to);
+            return true;
+        }
+    }
+
     /// Checks if move is valid and executes if valid. Returns false if not valid.
     pub fn new_position(&mut self, p: Piece, to: Position) -> bool {
         let mut target_bitb = BitBoard::new();

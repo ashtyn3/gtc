@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::fs::{self, File};
 use std::io::Write;
 use std::str::FromStr;
@@ -38,12 +39,12 @@ pub fn read_state_file(ctx: &mut Instance, name: String) {
             println!("{}", pos.unwrap_err());
             return;
         }
-        ctx.board.new_position(p, pos.unwrap());
+        ctx.make_move(p, pos.unwrap());
     }
 
     println!("From: {}", ctx.board.encode());
 }
-pub fn cmd(ctx: &mut Instance, s: &str, prot: bool) {
+pub fn cmd(mut ctx: &mut Instance, s: &str, prot: bool) {
     let s = s.trim().split_whitespace().collect::<Vec<&str>>();
     match s[0] {
         "l" | "load" => {
@@ -179,7 +180,7 @@ pub fn cmd(ctx: &mut Instance, s: &str, prot: bool) {
                 println!();
                 println!("Stalemate: {}", ctx.has_stalemate());
                 println!();
-                println!("win ({}): {}", ctx.side, ctx.has_win())
+                println!("win ({}): {}", ctx.to_owned().side, ctx.has_win())
             } else {
                 println!(
                     "passive_defeat:\n  white: {:?}\n  orange: {:?}",
@@ -201,6 +202,8 @@ pub fn cmd(ctx: &mut Instance, s: &str, prot: bool) {
         "ping" => println!("ok"),
         "set" => println!("{}", ctx.game_set()),
         "turn" | "t" => println!("{}", ctx.side),
+        "call" | "c" => ctx.call_win(),
+        "miss-call" | "mc" => println!("{}", ctx.has_miss_call()),
 
         _ => return,
     }
@@ -209,6 +212,9 @@ pub fn blank_instance() -> Instance {
     Instance {
         board: Board::blank(),
         side: Side::White,
+        call: HashMap::from([(Side::White, false), (Side::Orange, false)]),
+        miss_call: HashMap::from([(Side::White, false), (Side::Orange, false)]),
+        last_move: HashMap::from([(Side::White, Piece::None), (Side::Orange, Piece::None)]),
         states: Arc::new(String::from("")),
     }
 }
